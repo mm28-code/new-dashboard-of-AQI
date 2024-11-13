@@ -1,81 +1,85 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import pdfkit  # Requires wkhtmltopdf to be installed
+import pandas as pd
+import base64
+import io
+import time
 
-# Set your credentials
+# Set your username and password
 USERNAME = "mm28"
 PASSWORD = "manish@28"
 
-# Function to check login credentials
+# Function to check credentials
 def check_credentials():
     """Prompt for username and password, and verify credentials."""
     username = st.text_input("Username:")
     password = st.text_input("Password:", type="password")
-    if st.button("Login"):
-        if username == USERNAME and password == PASSWORD:
-            st.session_state.logged_in = True
-            st.session_state.username = username
-            st.success(f"Logged in successfully as {username}!")
-        else:
-            st.error("Incorrect Username or Password")
+    
+    if username == USERNAME and password == PASSWORD:
+        return True
+    else:
+        st.warning("Incorrect Username or Password")
+        return False
 
-# Initialize session state
+# **Page Configuration**
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'show_dashboard' not in st.session_state:
+    st.session_state.show_dashboard = False
 
-# Login Page
+# **Login and Redirect Logic**
 if not st.session_state.logged_in:
-    st.title("Login to Access Indian Air Quality Dashboard")
-    check_credentials()
-
-# Dashboard Page
+    # **Page 1: Login**
+    st.title("Login to Access Dashboard")
+    if check_credentials():
+        st.session_state.logged_in = True
+        st.session_state.show_dashboard = True
+        st.success("Logged in successfully!")
+        # Redirect to dashboard page
+        with st.spinner('Loading Dashboard...'):
+            time.sleep(1)
+            st.empty()  # Clear the login page content
+            st.session_state.show_dashboard = True
+    elif st.button("Login"):
+        if check_credentials():
+            st.session_state.logged_in = True
+            st.session_state.show_dashboard = True
 else:
-    # Page title with username
-    st.title("Indian Air Quality Index Dashboard")
-    st.markdown(f"<h3 style='text-align: center;'>Welcome, {st.session_state.username}!</h3>", unsafe_allow_html=True)
+    if st.session_state.show_dashboard:
+        # **Page 2: Dashboard (only accessible after login)**
+        st.title("Indian Air Quality Dashboard")
+        st.markdown("<h3 style='text-align: center;'>Welcome, " + USERNAME + "!</h3>", unsafe_allow_html=True)
+        
+        # **Expanded Power BI Embed (full width)**
+        powerbi_url = "https://app.powerbi.com/view?r=eyJrIjoiZjdlZjg3NDUtNjcwNC00MWY3LWE5OWYtZTIxZDQ4NTY0NDliIiwidCI6ImRjNTdkYjliLWNjNTQtNDI5Yi1iOWU4LTBhZmZhMzZmMDY2NiJ9"
+        st.markdown(f'<iframe width="100%" height="800" src="{powerbi_url}" frameborder="0" allowFullScreen="true"></iframe>', unsafe_allow_html=True)
 
-    # Embed Power BI dashboard
-    power_bi_iframe = """
-        <iframe title="Indian Air Quality Index new final" width="100%" height="1000px"
-        src="https://app.powerbi.com/view?r=eyJrIjoiZjdlZjg3NDUtNjcwNC00MWY3LWE5OWYtZTIxZDQ4NTY0NDliIiwidCI6ImRjNTdkYjliLWNjNTQtNDI5Yi1iOWU4LTBhZmZhMzZmMDY2NiJ9"
-        frameborder="0" allowFullScreen="true"></iframe>
-    """
-    components.html(power_bi_iframe, height=1000)
-
-    # Button to download the dashboard as a PDF
-    st.markdown("### Download Dashboard")
-    if st.button("Download as PDF"):
-        # Convert the Power BI iframe to PDF
-        pdfkit.from_string(power_bi_iframe, "dashboard.pdf")
-        with open("dashboard.pdf", "rb") as pdf_file:
-            st.download_button(
-                label="Download Dashboard as PDF",
-                data=pdf_file,
-                file_name="Indian_Air_Quality_Dashboard.pdf",
-                mime="application/pdf"
-            )
-
-    # Feedback Section
-    st.subheader("Feedback")
-
-    # Rating with colored styling
-    cols = st.columns(5)
-    with cols[2]:  # Center the rating slider
-        rating = st.slider("Rate the Dashboard:", min_value=1, max_value=5, value=3)
-    
-    # Rating Display with Colors
-    if rating == 5:
-        st.markdown("<h3 style='color:green;'>⭐️⭐️⭐️⭐️⭐️ Amazing!</h3>", unsafe_allow_html=True)
-    elif rating == 4:
-        st.markdown("<h3 style='color:blue;'>⭐️⭐️⭐️⭐️ Great!</h3>", unsafe_allow_html=True)
-    elif rating == 3:
-        st.markdown("<h3 style='color:orange;'>⭐️⭐️⭐️ Good</h3>", unsafe_allow_html=True)
-    elif rating == 2:
-        st.markdown("<h3 style='color:red;'>⭐️⭐️ Needs Improvement</h3>", unsafe_allow_html=True)
-    else:
-        st.markdown("<h3 style='color:darkred;'>⭐️ Poor</h3>", unsafe_allow_html=True)
-    
-    # Text area for feedback
-    feedback = st.text_area("Please provide your feedback (below):")
-    if st.button("Submit Feedback"):
-        st.success("Thank you for your feedback!")
+        # **Feedback Section (below Power BI embed, full width)**
+        st.subheader("Feedback")
+        cols = st.columns(5)  # Create 5 equal columns for the rating slider
+        with cols[2]:  # Center the rating slider
+            rating = st.slider("Rate the Dashboard:", min_value=1, max_value=5, value=3)
+        st.write(f"Your Rating: {rating} stars")
+        feedback = st.text_area("Please provide your feedback (below):")
+        if st.button("Submit Feedback"):
+            st.success("Thank you for your feedback!")
+        
+        # **Example Data for Download (CSV)**
+        df = pd.DataFrame({
+            "Location": ["Location A", "Location B", "Location C"],
+            "PM2.5": [35, 42, 27],
+            "PM10": [55, 60, 45]
+        })
+        
+        # **Function to Convert DataFrame to CSV Download**
+        def convert_df_to_csv(df):
+            csv = df.to_csv(index=False)
+            return csv
+        
+        # **Download Button for CSV**
+        csv = convert_df_to_csv(df)
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name="air_quality_data.csv",
+            mime="text/csv"
+        )
