@@ -6,6 +6,9 @@ import pdfkit  # Requires wkhtmltopdf to be installed
 USERNAME = "mm28"
 PASSWORD = "manish@28"
 
+# Configure pdfkit to use wkhtmltopdf
+pdfkit_config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
+
 # Function to check login credentials
 def check_credentials():
     """Prompt for username and password, and verify credentials."""
@@ -45,8 +48,8 @@ else:
     # Button to download the dashboard as a PDF
     st.markdown("### Download Dashboard")
     if st.button("Download as PDF"):
-        # Convert the Power BI iframe to PDF
-        pdfkit.from_string(power_bi_iframe, "dashboard.pdf")
+        # Convert the Power BI iframe to PDF using the configured path for wkhtmltopdf
+        pdfkit.from_string(power_bi_iframe, "dashboard.pdf", configuration=pdfkit_config)
         with open("dashboard.pdf", "rb") as pdf_file:
             st.download_button(
                 label="Download Dashboard as PDF",
@@ -82,28 +85,13 @@ else:
 
     # FAQ Section
     st.subheader("Frequently Asked Questions (FAQ)")
-    
-    # List of FAQs
-    faq_data = {
-        "What does the Air Quality Index (AQI) indicate?": (
-            "The AQI measures air quality levels based on pollutant concentrations like PM2.5, PM10, NO2, and SO2. Higher AQI values indicate more significant health concerns for the population."
-        ),
-        "Which locations are covered in this dashboard?": (
-            "This dashboard includes data from various cities in India, including but not limited to New Delhi, Mumbai, Kolkata, and Bengaluru. You can view specific metrics for these locations in the Power BI embed."
-        ),
-        "How often is the data updated in this dashboard?": (
-            "The data in this dashboard is updated in real-time or at regular intervals based on the available data feeds. Please refer to the Power BI dashboard for the latest updates."
-        ),
-        "What are PM2.5 and PM10, and why are they important?": (
-            "PM2.5 and PM10 are particulate matter sizes measured in micrometers. PM2.5 particles are more dangerous as they can penetrate the lungs, posing higher health risks."
-        ),
-        "How can I download the data or the dashboard?": (
-            "You can download the dashboard by clicking the 'Download as PDF' button above. Additionally, the raw data can be exported from the Power BI dashboard."
-        )
-    }
-    
-    # Display FAQs in the app
-    for question, answer in faq_data.items():
-        st.markdown(f"**{question}**")
-        st.markdown(answer)
-        st.markdown("---")  # Separator between FAQ items
+    st.markdown("""
+    **Q1: What is the purpose of this dashboard?**  
+    A: This dashboard provides an interactive visualization of the air quality index (AQI) in various locations across India.
+
+    **Q2: How often is the data updated?**  
+    A: The data in this dashboard is updated periodically to ensure it reflects the latest air quality information.
+
+    **Q3: Can I download the data?**  
+    A: Yes, you can download the data by clicking the "Download Dashboard as PDF" button above.
+    """)
