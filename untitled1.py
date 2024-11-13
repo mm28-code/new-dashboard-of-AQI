@@ -1,5 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import pdfkit  # Requires wkhtmltopdf to be installed
 
 # Set your credentials
 USERNAME = "mm28"
@@ -13,7 +14,8 @@ def check_credentials():
     if st.button("Login"):
         if username == USERNAME and password == PASSWORD:
             st.session_state.logged_in = True
-            st.success("Logged in successfully!")
+            st.session_state.username = username
+            st.success(f"Logged in successfully as {username}!")
         else:
             st.error("Incorrect Username or Password")
 
@@ -28,18 +30,30 @@ if not st.session_state.logged_in:
 
 # Dashboard Page
 else:
-    # Page title
+    # Page title with username
     st.title("Indian Air Quality Index Dashboard")
+    st.markdown(f"<h3 style='text-align: center;'>Welcome, {st.session_state.username}!</h3>", unsafe_allow_html=True)
 
     # Embed Power BI dashboard
-    components.html(
-        """
+    power_bi_iframe = """
         <iframe title="Indian Air Quality Index new final" width="100%" height="1000px"
         src="https://app.powerbi.com/view?r=eyJrIjoiZjdlZjg3NDUtNjcwNC00MWY3LWE5OWYtZTIxZDQ4NTY0NDliIiwidCI6ImRjNTdkYjliLWNjNTQtNDI5Yi1iOWU4LTBhZmZhMzZmMDY2NiJ9"
         frameborder="0" allowFullScreen="true"></iframe>
-        """,
-        height=1000
-    )
+    """
+    components.html(power_bi_iframe, height=1000)
+
+    # Button to download the dashboard as a PDF
+    st.markdown("### Download Dashboard")
+    if st.button("Download as PDF"):
+        # Convert the Power BI iframe to PDF
+        pdfkit.from_string(power_bi_iframe, "dashboard.pdf")
+        with open("dashboard.pdf", "rb") as pdf_file:
+            st.download_button(
+                label="Download Dashboard as PDF",
+                data=pdf_file,
+                file_name="Indian_Air_Quality_Dashboard.pdf",
+                mime="application/pdf"
+            )
 
     # Feedback Section
     st.subheader("Feedback")
@@ -65,4 +79,3 @@ else:
     feedback = st.text_area("Please provide your feedback (below):")
     if st.button("Submit Feedback"):
         st.success("Thank you for your feedback!")
-
