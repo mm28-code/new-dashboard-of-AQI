@@ -3,6 +3,8 @@ import streamlit.components.v1 as components
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import pdfkit  # Ensure pdfkit is installed
+import os
 
 # Set your credentials
 USERNAME = "mm28"
@@ -46,6 +48,15 @@ def check_credentials():
         else:
             st.error("Incorrect Username or Password")
 
+# Function to generate PDF from HTML content
+def generate_pdf(html_content, output_filename):
+    try:
+        pdfkit.from_string(html_content, output_filename)
+        return True
+    except Exception as e:
+        st.error(f"Error generating PDF: {e}")
+        return False
+
 # Initialize session state
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -61,14 +72,12 @@ else:
     st.title("Indian Air Quality Index Dashboard")
 
     # Embed Power BI dashboard
-    components.html(
-        """
+    iframe_code = """
         <iframe title="Indian Air Quality Index new final" width="100%" height="1000px"
         src="https://app.powerbi.com/view?r=eyJrIjoiZjdlZjg3NDUtNjcwNC00MWY3LWE5OWYtZTIxZDQ4NTY0NDliIiwidCI6ImRjNTdkYjliLWNjNTQtNDI5Yi1iOWU4LTBhZmZhMzZmMDY2NiJ9"
         frameborder="0" allowFullScreen="true"></iframe>
-        """,
-        height=1000
-    )
+    """
+    components.html(iframe_code, height=1000)
 
     # Feedback Section
     st.subheader("Feedback")
@@ -102,3 +111,29 @@ else:
                 st.error("Failed to send feedback. Please try again later.")
         else:
             st.warning("Please provide feedback before submitting.")
+    
+    # PDF Download Section
+    st.subheader("Download Dashboard")
+    if st.button("Download Dashboard as PDF"):
+        html_dashboard = f"""
+        <html>
+            <head><title>Indian Air Quality Dashboard</title></head>
+            <body>
+                <h1>Indian Air Quality Index Dashboard</h1>
+                {iframe_code}
+                <h2>Feedback</h2>
+                <p>Rating: {rating} stars</p>
+                <p>Feedback: {feedback}</p>
+            </body>
+        </html>
+        """
+        pdf_filename = "dashboard.pdf"
+        if generate_pdf(html_dashboard, pdf_filename):
+            with open(pdf_filename, "rb") as file:
+                st.download_button(
+                    label="Download PDF",
+                    data=file,
+                    file_name=pdf_filename,
+                    mime="application/pdf"
+                )
+            os.remove(pdf_filename)  # Cleanup after download
