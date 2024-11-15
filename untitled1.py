@@ -1,9 +1,38 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Set your credentials
 USERNAME = "mm28"
 PASSWORD = "manish@28"
+
+# SMTP configuration
+smtp_server = "smtp.office365.com"
+smtp_port = 587
+smtp_user = "support@aptpath.in"
+smtp_password = "kjydtmsbmbqtnydk"
+sender_email = "support@aptpath.in"
+receiver_emails = ["mks60209@gmail.com"]
+
+# Function to send feedback email
+def send_email(subject, body, receiver_emails):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = ", ".join(receiver_emails)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(sender_email, receiver_emails, msg.as_string())
+        return True
+    except Exception as e:
+        st.error(f"Error sending email: {e}")
+        return False
 
 # Function to check login credentials
 def check_credentials():
@@ -64,4 +93,12 @@ else:
     # Text area for feedback
     feedback = st.text_area("Please provide your feedback (below):")
     if st.button("Submit Feedback"):
-        st.success("Thank you for your feedback!")
+        if feedback.strip():
+            feedback_body = f"User Feedback:\n\nRating: {rating} stars\n\nFeedback:\n{feedback}"
+            email_sent = send_email("Dashboard Feedback", feedback_body, receiver_emails)
+            if email_sent:
+                st.success("Thank you for your feedback! It has been sent successfully.")
+            else:
+                st.error("Failed to send feedback. Please try again later.")
+        else:
+            st.warning("Please provide feedback before submitting.")
